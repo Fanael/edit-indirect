@@ -145,9 +145,12 @@ In any case, return the edit-indirect buffer."
 (defvar edit-indirect-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c '") #'edit-indirect-commit)
+    (define-key map (kbd "C-c C-c") #'edit-indirect-commit)
     (define-key map (kbd "C-c C-k") #'edit-indirect-abort)
     map)
-  "Keymap for edit-indirect buffers.")
+  "Keymap for edit-indirect buffers.
+
+\\{edit-indirect-mode-map}")
 
 (defun edit-indirect-commit ()
   "Commit the modifications done in an edit-indirect buffer.
