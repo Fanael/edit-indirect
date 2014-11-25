@@ -105,6 +105,13 @@ When done, exit with `edit-indirect-commit', which will remove the
 original region and replace it with the edited version; or with
 `edit-indirect-abort', which will drop the modifications.
 
+This differs from `clone-indirect-buffer' with narrowing in that
+the text properties are not shared, so the parent buffer major mode
+and the edit-indirect buffer major mode will not be able to tread
+on each other's toes by setting up potentially conflicting text
+properties, which happens surprisingly often when the font-lock
+mode is used.
+
 Edit-indirect buffers use the `edit-indirect-mode-map' keymap.
 
 If there's already an edit-indirect buffer for BEG..END, use that.
