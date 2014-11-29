@@ -228,17 +228,24 @@ nil."
 BEG..END is the parent buffer region to insert.
 OVERLAY is the overlay, see `edit-indirect--overlay'."
   (let ((buffer (generate-new-buffer (format "*edit-indirect %s*" (buffer-name))))
-        (parent-buffer (current-buffer))
-        ;; So we can use the buffer-local values from the parent buffer.
-        (guess-fn edit-indirect-guess-mode-function)
-        (creation-hook edit-indirect-after-creation-hook))
+        (parent-buffer (current-buffer)))
     (overlay-put overlay 'edit-indirect-buffer buffer)
     (with-current-buffer buffer
       (insert-buffer-substring-no-properties parent-buffer beg end)
       (set-buffer-modified-p nil)
       (edit-indirect--mode overlay)
-      (funcall guess-fn parent-buffer beg end)
-      (let ((edit-indirect-after-creation-hook creation-hook))
+      ;; Use the buffer-local values from the parent buffer. Don't retrieve the
+      ;; values before actual uses in case these variables are changed by some
+      ;; of the many possible hooks.
+      ;; `with-current-buffer' is used instead of `buffer-local-value' because
+      ;; the latter doesn't give warnings about free variables when
+      ;; byte-compiled.
+      (funcall (with-current-buffer parent-buffer
+                 edit-indirect-guess-mode-function)
+               parent-buffer beg end)
+      (let ((edit-indirect-after-creation-hook
+             (with-current-buffer parent-buffer
+               edit-indirect-after-creation-hook)))
         (run-hooks 'edit-indirect-after-creation-hook)))
     buffer))
 
