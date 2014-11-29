@@ -222,6 +222,16 @@ nil."
         (throw 'done overlay)))
     nil))
 
+(defmacro edit-indirect--buffer-local-value (buffer variable)
+  "Get the BUFFER local value of VARIABLE.
+VARIABLE shall be a symbol."
+  (unless (symbolp variable)
+    (signal 'wrong-type-argument (list #'symbolp variable)))
+  ;; `with-current-buffer' is used instead of `buffer-local-value' because
+  ;; the latter doesn't give warnings about free variables when
+  ;; byte-compiled.
+  `(with-current-buffer ,buffer ,variable))
+
 (defun edit-indirect--create-indirect-buffer (beg end overlay)
   "Create an edit-indirect buffer and return it.
 
@@ -237,15 +247,12 @@ OVERLAY is the overlay, see `edit-indirect--overlay'."
       ;; Use the buffer-local values from the parent buffer. Don't retrieve the
       ;; values before actual uses in case these variables are changed by some
       ;; of the many possible hooks.
-      ;; `with-current-buffer' is used instead of `buffer-local-value' because
-      ;; the latter doesn't give warnings about free variables when
-      ;; byte-compiled.
-      (funcall (with-current-buffer parent-buffer
-                 edit-indirect-guess-mode-function)
+      (funcall (edit-indirect--buffer-local-value
+                parent-buffer edit-indirect-guess-mode-function)
                parent-buffer beg end)
       (let ((edit-indirect-after-creation-hook
-             (with-current-buffer parent-buffer
-               edit-indirect-after-creation-hook)))
+             (edit-indirect--buffer-local-value
+              parent-buffer edit-indirect-after-creation-hook)))
         (run-hooks 'edit-indirect-after-creation-hook)))
     buffer))
 
