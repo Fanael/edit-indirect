@@ -127,17 +127,7 @@ In any case, return the edit-indirect buffer."
        (prog1 (list (region-beginning) (region-end) t)
          (deactivate-mark))
      (user-error "No region")))
-  (let ((buffer
-         (let ((old-overlay (edit-indirect--search-for-edit-indirect beg end)))
-           (cond
-            ((null old-overlay)
-             (let ((overlay (edit-indirect--create-overlay beg end)))
-               (edit-indirect--create-indirect-buffer beg end overlay)))
-            ((and (= beg (overlay-start old-overlay))
-                  (= end (overlay-end old-overlay)))
-             (overlay-get old-overlay 'edit-indirect-buffer))
-            (t
-             (user-error "Indirectly edited regions cannot overlap"))))))
+  (let ((buffer (edit-indirect--get-edit-indirect-buffer beg end)))
     (when display-buffer
       (select-window (display-buffer buffer)))
     buffer))
@@ -207,6 +197,31 @@ OVERLAY is the value to set `edit-indirect--overlay' to."
   (add-minor-mode
    'edit-indirect--overlay " indirect" edit-indirect-mode-map nil #'ignore))
 
+(defun edit-indirect--get-edit-indirect-buffer (beg end)
+  "Return an edit-indirect buffer for the region BEG..END.
+If there's already an edit-indirect buffer active overlapping any
+portion of BEG..END, an `user-error' is signaled."
+  (let ((old-overlay (edit-indirect--search-for-edit-indirect beg end)))
+    (cond
+     ((null old-overlay)
+      (let ((overlay (edit-indirect--create-overlay beg end)))
+        (edit-indirect--create-indirect-buffer beg end overlay)))
+     ((and (= beg (overlay-start old-overlay))
+           (= end (overlay-end old-overlay)))
+      (overlay-get old-overlay 'edit-indirect-buffer))
+     (t
+      (user-error "Indirectly edited regions cannot overlap")))))
+
+(defun edit-indirect--search-for-edit-indirect (beg end)
+  "Return an existing edit-indirect overlay for some region inside BEG..END.
+If there's no indirectly edited region inside BEG..END, return
+nil."
+  (catch 'done
+    (dolist (overlay (overlays-in beg end))
+      (when (overlay-get overlay 'edit-indirect-buffer)
+        (throw 'done overlay)))
+    nil))
+
 (defun edit-indirect--create-indirect-buffer (beg end overlay)
   "Create an edit-indirect buffer and return it.
 
@@ -271,16 +286,6 @@ the parent buffer."
   ;; won't try to call us again.
   (setq edit-indirect--overlay nil)
   (kill-buffer-and-window))
-
-(defun edit-indirect--search-for-edit-indirect (beg end)
-  "Return an existing edit-indirect overlay for some region inside BEG..END.
-If there's no indirectly edited region inside BEG..END, return
-nil."
-  (catch 'done
-    (dolist (overlay (overlays-in beg end))
-      (when (overlay-get overlay 'edit-indirect-buffer)
-        (throw 'done overlay)))
-    nil))
 
 (defun edit-indirect--abort-on-kill-buffer ()
   "Abort indirect edit.
