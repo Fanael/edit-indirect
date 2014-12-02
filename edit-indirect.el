@@ -92,6 +92,19 @@ end of the changed region."
   "Face used to highlight an indirectly edited region."
   :group 'edit-indirect-faces)
 
+;; Emacs <= 24.3 has no `define-error'.
+(let* ((user-error-conditions (get 'user-error 'error-conditions))
+       (define-user-error (lambda (name message)
+                            (put name 'error-conditions
+                                 (cons name user-error-conditions))
+                            (put name 'error-message message))))
+  (funcall define-user-error 'edit-indirect-overlapping
+           "Indirectly edited regions cannot overlap")
+  (funcall define-user-error 'edit-indirect-read-only
+           "Text is read-only, modify the edit-indirect buffer instead")
+  (funcall define-user-error 'edit-indirect-not-indirect
+           "This is not an edit-indirect buffer"))
+
 (defvar edit-indirect--overlay)
 
 ;;;###autoload
@@ -116,7 +129,8 @@ Edit-indirect buffers use the `edit-indirect-mode-map' keymap.
 
 If there's already an edit-indirect buffer for BEG..END, use that.
 If there's already an edit-indirect buffer active overlapping any
-portion of BEG..END, an `user-error' is signaled.
+portion of BEG..END, an `edit-indirect-overlapping' error is
+signaled.
 
 When DISPLAY-BUFFER is non-nil or when called interactively,
 display the edit-indirect buffer in some window and select it.
@@ -200,7 +214,8 @@ OVERLAY is the value to set `edit-indirect--overlay' to."
 (defun edit-indirect--get-edit-indirect-buffer (beg end)
   "Return an edit-indirect buffer for the region BEG..END.
 If there's already an edit-indirect buffer active overlapping any
-portion of BEG..END, an `user-error' is signaled."
+portion of BEG..END, an `edit-indirect-overlapping' error is
+signaled."
   (let ((old-overlay (edit-indirect--search-for-edit-indirect beg end)))
     (cond
      ((null old-overlay)
@@ -210,7 +225,7 @@ portion of BEG..END, an `user-error' is signaled."
            (= end (overlay-end old-overlay)))
       (overlay-get old-overlay 'edit-indirect-buffer))
      (t
-      (user-error "Indirectly edited regions cannot overlap")))))
+      (signal 'edit-indirect-overlapping '())))))
 
 (defun edit-indirect--search-for-edit-indirect (beg end)
   "Return an existing edit-indirect overlay for some region inside BEG..END.
@@ -270,11 +285,11 @@ BEG and END specify the region the overlay should encompass."
   "Non-nil means disregard read-only status of indirectly-edited region.")
 
 (defun edit-indirect--barf-read-only (_ov _after _beg _end &optional _len)
-  "Signal an `user-error' because the text is read-only.
-The text edited in an edit-indirect buffer shouldn't be changed in
-the parent buffer."
+  "Signal an error because the text is read-only.
+No error is signaled if `inhibit-read-only' or
+`edit-indirect--inhibit-read-only' is non-nil."
   (unless (or inhibit-read-only edit-indirect--inhibit-read-only)
-    (user-error "Text is read-only, modify the edit-indirect buffer instead")))
+    (signal 'edit-indirect-read-only '())))
 
 (defun edit-indirect--commit ()
   "Commit the modifications done in an edit-indirect buffer."
@@ -309,9 +324,10 @@ Should be called only from `kill-buffer-hook'."
     (edit-indirect--abort)))
 
 (defun edit-indirect--barf-if-not-indirect ()
-  "Signal an `user-error' if the current buffer is not an edit-indirect buffer."
+  "Signal an error if the current buffer is not an edit-indirect buffer.
+The error signaled is `edit-indirect-not-indirect'."
   (unless edit-indirect--overlay
-    (user-error "This is not an edit-indirect buffer")))
+    (signal 'edit-indirect-not-indirect '())))
 
 (provide 'edit-indirect)
 ;;; edit-indirect.el ends here
