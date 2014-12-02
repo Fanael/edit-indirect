@@ -263,6 +263,7 @@ BEG and END specify the region the overlay should encompass."
   (let ((overlay (make-overlay beg end)))
     (overlay-put overlay 'face 'edit-indirect-edited-region)
     (overlay-put overlay 'modification-hooks '(edit-indirect--barf-read-only))
+    (overlay-put overlay 'insert-in-front-hooks '(edit-indirect--barf-read-only))
     overlay))
 
 (defvar edit-indirect--inhibit-read-only nil
