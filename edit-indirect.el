@@ -299,11 +299,33 @@ No error is signaled if `inhibit-read-only' or
         (edit-indirect--inhibit-read-only t))
     (with-current-buffer (overlay-buffer edit-indirect--overlay)
       (save-excursion
-        (run-hook-with-args 'edit-indirect-before-commit-functions beg end)
-        (delete-region beg end)
-        (goto-char beg)
-        (insert-buffer-substring-no-properties buffer 1 (1+ (buffer-size buffer)))
-        (run-hook-with-args 'edit-indirect-after-commit-functions beg (point))))))
+        (let ((beg-marker (copy-marker beg))
+              (end-marker (copy-marker end)))
+          (edit-indirect--run-hook-with-positions
+           'edit-indirect-before-commit-functions beg-marker end-marker)
+          (delete-region beg-marker end-marker)
+          (goto-char beg-marker)
+          (insert-buffer-substring-no-properties buffer 1 (1+ (buffer-size buffer)))
+          (edit-indirect--run-hook-with-positions
+           'edit-indirect-after-commit-functions beg-marker (point))
+          (set-marker beg-marker nil)
+          (set-marker end-marker nil))))))
+
+(defun edit-indirect--run-hook-with-positions (hook beg end)
+  "Run HOOK with the specified positions BEG and END.
+HOOK should be a symbol, a hook variable.
+The functions are passed integer positions.
+If a function changes the buffer contents, the next function will be
+called with updated positions."
+  (let ((beg-marker (unless (markerp beg) (copy-marker beg)))
+        (end-marker (unless (markerp end) (copy-marker end))))
+    (run-hook-wrapped hook
+                      (lambda (f beg end)
+                        (funcall f (marker-position beg) (marker-position end))
+                        nil)
+                      (or beg-marker beg) (or end-marker end))
+    (when beg-marker (set-marker beg-marker nil))
+    (when end-marker (set-marker end-marker nil))))
 
 (defun edit-indirect--abort ()
   "Abort indirect edit."
