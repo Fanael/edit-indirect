@@ -337,7 +337,8 @@ called with updated positions."
   ;; Kill the overlay reference so that `edit-indirect--abort-on-kill-buffer'
   ;; won't try to call us again.
   (setq edit-indirect--overlay nil)
-  (kill-buffer-and-window))
+  ;; If we created a window, get rid of it.  Kill the buffer we created.
+  (quit-window t))
 
 (defun edit-indirect--abort-on-kill-buffer ()
   "Abort indirect edit.
