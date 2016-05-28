@@ -7,7 +7,7 @@
 
 ;; This file is NOT part of GNU Emacs.
 
-;; Copyright (c) 2014, Fanael Linithien
+;; Copyright (c) 2014-2016, Fanael Linithien
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -143,7 +143,9 @@ In any case, return the edit-indirect buffer."
      (user-error "No region")))
   (let ((buffer (edit-indirect--get-edit-indirect-buffer beg end)))
     (when display-buffer
-      (select-window (display-buffer buffer)))
+      (let ((window (display-buffer buffer)))
+        (set-window-parameter window 'edit-indirect-should-quit t)
+        (select-window window)))
     buffer))
 
 (defvar edit-indirect-mode-map
@@ -338,7 +340,9 @@ called with updated positions."
   ;; won't try to call us again.
   (setq edit-indirect--overlay nil)
   ;; If we created a window, get rid of it. Kill the buffer we created.
-  (quit-window t))
+  (if (window-parameter nil 'edit-indirect-should-quit)
+      (quit-window t)
+    (kill-buffer)))
 
 (defun edit-indirect--abort-on-kill-buffer ()
   "Abort indirect edit.
