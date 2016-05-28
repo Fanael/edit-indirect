@@ -106,6 +106,7 @@ end of the changed region."
            "This is not an edit-indirect buffer"))
 
 (defvar edit-indirect--overlay)
+(defvar edit-indirect--should-quit-window nil)
 
 ;;;###autoload
 (defun edit-indirect-region (beg end &optional display-buffer)
@@ -143,9 +144,9 @@ In any case, return the edit-indirect buffer."
      (user-error "No region")))
   (let ((buffer (edit-indirect--get-edit-indirect-buffer beg end)))
     (when display-buffer
-      (let ((window (display-buffer buffer)))
-        (set-window-parameter window 'edit-indirect-should-quit t)
-        (select-window window)))
+      (with-current-buffer buffer
+        (setq-local edit-indirect--should-quit-window t))
+      (select-window (display-buffer buffer)))
     buffer))
 
 (defvar edit-indirect-mode-map
@@ -340,7 +341,7 @@ called with updated positions."
   ;; won't try to call us again.
   (setq edit-indirect--overlay nil)
   ;; If we created a window, get rid of it. Kill the buffer we created.
-  (if (window-parameter nil 'edit-indirect-should-quit)
+  (if edit-indirect--should-quit-window
       (quit-window t)
     (kill-buffer)))
 
