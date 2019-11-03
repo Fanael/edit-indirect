@@ -7,6 +7,8 @@
 
 ;; This file is NOT part of GNU Emacs.
 
+;; SPDX-License-Identifier: BSD-2-clause
+;;
 ;; Copyright (c) 2014-2017, Fanael Linithien
 ;; All rights reserved.
 ;;
