@@ -2,14 +2,14 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.5
+;; Version: 0.1.6
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
 ;; SPDX-License-Identifier: BSD-2-clause
 ;;
-;; Copyright (c) 2014-2017, Fanael Linithien
+;; Copyright (c) 2014-2020, Fanael Linithien
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -292,10 +292,18 @@ OVERLAY is the overlay, see `edit-indirect--overlay'."
       (funcall (edit-indirect--buffer-local-value
                 parent-buffer edit-indirect-guess-mode-function)
                parent-buffer beg end)
-      (let ((edit-indirect-after-creation-hook
-             (edit-indirect--buffer-local-value
-              parent-buffer edit-indirect-after-creation-hook)))
-        (run-hooks 'edit-indirect-after-creation-hook)))
+      (if (local-variable-p 'edit-indirect-after-creation-hook parent-buffer)
+          ;; Copy the parent buffer hook to the indirect buffer instead of
+          ;; let-binding it to avoid running it twice.
+          (setq-local edit-indirect-after-creation-hook
+                      (edit-indirect--buffer-local-value
+                       parent-buffer edit-indirect-after-creation-hook))
+        ;; No need to do copy anything if the parent buffer has no local value,
+        ;; the global value will be used instead. Just kill the local value in
+        ;; the indirect buffer in case a prior hook set it, because we're not
+        ;; supposed to use it.
+        (kill-local-variable 'edit-indirect-after-creation-hook))
+      (run-hooks 'edit-indirect-after-creation-hook))
     buffer))
 
 (defun edit-indirect--create-overlay (beg end)
