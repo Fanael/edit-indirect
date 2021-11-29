@@ -341,9 +341,11 @@ No error is signaled if `inhibit-read-only' or
            'edit-indirect-before-commit-functions beg-marker end-marker)
           (save-match-data
             (set-match-data (list beg-marker end-marker))
-            (replace-match (with-current-buffer buffer
-                             (buffer-substring-no-properties 1 (1+ (buffer-size))))
-                           t t))
+            (let ((new-data
+                   (with-current-buffer buffer
+                     (buffer-substring-no-properties 1 (1+ (buffer-size))))))
+              (unless (string= new-data (match-string 0))
+                (replace-match new-data t t))))
           (edit-indirect--run-hook-with-positions
            'edit-indirect-after-commit-functions beg-marker (point))
           (set-marker beg-marker nil)
