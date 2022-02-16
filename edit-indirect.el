@@ -2,14 +2,14 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.6
+;; Version: 0.1.7
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
 ;; SPDX-License-Identifier: BSD-2-clause
 ;;
-;; Copyright (c) 2014-2020, Fanael Linithien
+;; Copyright (c) 2014-2022, Fanael Linithien
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -163,7 +163,7 @@ In any case, return the edit-indirect buffer."
 
 (defvar edit-indirect-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-x C-s") #'edit-indirect-save)
+    (define-key map [remap save-buffer] #'edit-indirect-save)
     (define-key map (kbd "C-c '") #'edit-indirect-commit)
     (define-key map (kbd "C-c C-c") #'edit-indirect-commit)
     (define-key map (kbd "C-c C-k") #'edit-indirect-abort)
