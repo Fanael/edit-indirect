@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.7
+;; Version: 0.1.8
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -279,6 +279,7 @@ VARIABLE shall be a symbol."
 
 BEG..END is the parent buffer region to insert.
 OVERLAY is the overlay, see `edit-indirect--overlay'."
+  (add-hook 'after-change-major-mode-hook #'edit-indirect--rebind-save-hooks)
   (let ((buffer (generate-new-buffer (format "*edit-indirect %s*" (buffer-name))))
         (parent-buffer (current-buffer)))
     (overlay-put overlay 'edit-indirect-buffer buffer)
@@ -349,7 +350,8 @@ No error is signaled if `inhibit-read-only' or
           (edit-indirect--run-hook-with-positions
            'edit-indirect-after-commit-functions beg-marker (point))
           (set-marker beg-marker nil)
-          (set-marker end-marker nil))))))
+          (set-marker end-marker nil))))
+    (set-buffer-modified-p nil)))
 
 (defun edit-indirect--run-hook-with-positions (hook beg end)
   "Run HOOK with the specified positions BEG and END.
@@ -381,6 +383,19 @@ called with updated positions."
   (if edit-indirect--should-quit-window
       (quit-window t)
     (kill-buffer)))
+
+(defun edit-indirect--rebind-save-hooks ()
+  "Bind our `save-buffer' hooks in the current buffer.
+Does nothing if the current buffer is not an edit-indirect buffer."
+  (when (edit-indirect-buffer-indirect-p)
+    (setq buffer-offer-save t)
+    (add-hook 'write-contents-functions #'edit-indirect--commit-on-save nil t)))
+
+(defun edit-indirect--commit-on-save ()
+  "Commit the indirect edit.
+Should only be called from `write-contents-functions'."
+  (edit-indirect--commit)
+  t)
 
 (defun edit-indirect--abort-on-kill-buffer ()
   "Abort indirect edit.
