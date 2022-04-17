@@ -121,7 +121,7 @@ end of the changed region."
 (defvar edit-indirect--should-quit-window nil)
 
 ;;;###autoload
-(defun edit-indirect-region (beg end &optional display-buffer)
+(defun edit-indirect-region (beg end &optional display-buffer major-mode)
   "Edit the region BEG..END in a separate buffer.
 The region is copied, without text properties, to a separate
 buffer, called edit-indirect buffer, and
@@ -148,6 +148,10 @@ signaled.
 When DISPLAY-BUFFER is non-nil or when called interactively,
 display the edit-indirect buffer in some window and select it.
 
+When MAJOR-MODE is non-nil, set the major mode of the new buffer
+to this instead of guessing it with
+`edit-indirect-guess-mode-function'.
+
 In any case, return the edit-indirect buffer."
   (interactive
    (if (or (use-region-p) (not transient-mark-mode))
@@ -155,6 +159,8 @@ In any case, return the edit-indirect buffer."
          (deactivate-mark))
      (user-error "No region")))
   (let ((buffer (edit-indirect--get-edit-indirect-buffer beg end)))
+    (when major-mode
+      (with-current-buffer buffer (funcall major-mode)))
     (when display-buffer
       (with-current-buffer buffer
         (setq-local edit-indirect--should-quit-window t))
