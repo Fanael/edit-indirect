@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.8
+;; Version: 0.1.9
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -139,6 +139,8 @@ properties, which happens surprisingly often when the font-lock
 mode is used.
 
 Edit-indirect buffers use the `edit-indirect-mode-map' keymap.
+Regions with active edit-indirect buffers use the
+`edit-indirect-overlay-map' keymap.
 
 If there's already an edit-indirect buffer for BEG..END, use that.
 If there's already an edit-indirect buffer active overlapping any
@@ -156,9 +158,7 @@ In any case, return the edit-indirect buffer."
      (user-error "No region")))
   (let ((buffer (edit-indirect--get-edit-indirect-buffer beg end)))
     (when display-buffer
-      (with-current-buffer buffer
-        (setq-local edit-indirect--should-quit-window t))
-      (select-window (display-buffer buffer)))
+      (edit-indirect--display-buffer buffer))
     buffer))
 
 (defvar edit-indirect-mode-map
@@ -171,6 +171,14 @@ In any case, return the edit-indirect buffer."
   "Keymap for edit-indirect buffers.
 
 \\{edit-indirect-mode-map}")
+
+(defvar edit-indirect-overlay-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'edit-indirect-display-active-buffer)
+    map)
+  "Keymap for regions with active edit-indirect buffers.
+
+\\{edit-indirect-overlay-map}")
 
 (defun edit-indirect-commit ()
   "Commit the modifications done in an edit-indirect buffer.
@@ -219,6 +227,16 @@ BUFFER defaults to the current buffer."
 It's done by calling `normal-mode'."
   (normal-mode))
 
+(defun edit-indirect-display-active-buffer ()
+  "Display the active edit-indirect buffer of the region the point is in."
+  (interactive)
+  (let ((overlay
+         (let ((p (point)))
+           (edit-indirect--search-for-edit-indirect p (1+ p)))))
+    (unless overlay
+      (signal 'edit-indirect-not-indirect '()))
+    (edit-indirect--display-buffer (overlay-get overlay 'edit-indirect-buffer))))
+
 (defvar edit-indirect--overlay nil
   "The overlay spanning the region of the parent buffer being edited.
 
@@ -237,6 +255,13 @@ OVERLAY is the value to set `edit-indirect--overlay' to."
 (with-no-warnings
   (add-minor-mode
    'edit-indirect--overlay " indirect" edit-indirect-mode-map nil #'ignore))
+
+(defun edit-indirect--display-buffer (buffer)
+  "Display the given BUFFER in some window and select it."
+  (with-current-buffer buffer
+    (setq-local edit-indirect--should-quit-window t))
+  (select-window (display-buffer buffer))
+  nil)
 
 (defun edit-indirect--get-edit-indirect-buffer (beg end)
   "Return an edit-indirect buffer for the region BEG..END.
@@ -315,6 +340,7 @@ BEG and END specify the region the overlay should encompass."
     (overlay-put overlay 'face 'edit-indirect-edited-region)
     (overlay-put overlay 'modification-hooks '(edit-indirect--barf-read-only))
     (overlay-put overlay 'insert-in-front-hooks '(edit-indirect--barf-read-only))
+    (overlay-put overlay 'keymap edit-indirect-overlay-map)
     overlay))
 
 (defvar edit-indirect--inhibit-read-only nil
