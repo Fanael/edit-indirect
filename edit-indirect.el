@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.9
+;; Version: 0.1.10
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -119,6 +119,7 @@ end of the changed region."
 
 (defvar edit-indirect--overlay)
 (defvar edit-indirect--should-quit-window nil)
+(put 'edit-indirect--should-quit-window 'permanent-local t)
 
 ;;;###autoload
 (defun edit-indirect-region (beg end &optional display-buffer)
