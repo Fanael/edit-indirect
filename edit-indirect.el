@@ -42,6 +42,8 @@
 ;; See the docstring of `edit-indirect-region' for details.
 
 ;;; Code:
+(require 'thingatpt)
+
 (defgroup edit-indirect nil
   "Editing regions in separate buffers."
   :group 'editing)
@@ -161,6 +163,37 @@ In any case, return the edit-indirect buffer."
     (when display-buffer
       (edit-indirect--display-buffer buffer))
     buffer))
+
+(defvar edit-indirect-string nil)
+(put 'edit-indirect-string 'end-op
+     (lambda ()
+       (while (nth 3 (syntax-ppss))
+         (forward-char))
+       (backward-char)))
+(put 'edit-indirect-string 'beginning-op
+     (lambda ()
+       (let ((forward (nth 3 (syntax-ppss))))
+         (while (nth 3 (syntax-ppss))
+           (backward-char))
+         (when forward
+           (forward-char)))))
+
+(defun edit-indirect-dwim (beg end &optional display-buffer)
+  "DWIM version of edit-indirect-region.
+When region is selected, call `edit-indirect-region' with the same
+arguments BEG, END and DISPLAY-BUFFER.
+But when no region is selected and the cursor is in a 'string' syntax
+mark the string and call `edit-indirect-region' with it."
+  (interactive
+   (if (or (use-region-p) (not transient-mark-mode))
+       (prog1 (list (region-beginning) (region-end) t)
+         (deactivate-mark))
+     (if (nth 3 (syntax-ppss))
+         (list (beginning-of-thing 'edit-indirect-string)
+               (end-of-thing 'edit-indirect-string)
+               t)
+       (user-error "No region marked and not inside a string"))))
+  (edit-indirect-region beg end display-buffer))
 
 (defvar edit-indirect-mode-map
   (let ((map (make-sparse-keymap)))
