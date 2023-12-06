@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.10
+;; Version: 0.1.11
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -227,6 +227,20 @@ BUFFER defaults to the current buffer."
   "Guess the major mode for an edit-indirect buffer.
 It's done by calling `normal-mode'."
   (normal-mode))
+
+(defun edit-indirect-language-detection-guess-mode (parent-buffer beg end)
+  "Guess the major mode from the PARENT-BUFFER substring from BEG to END using `language-detection.el'."
+  (if (fboundp #'language-detection-string)
+      (let* ((indirect-substring (with-current-buffer parent-buffer
+                                   (buffer-substring-no-properties beg end)))
+             (language (funcall #'language-detection-string indirect-substring))
+             (mode (intern (format "%s-mode" language))))
+        (if (fboundp mode)
+            (funcall mode)
+          (message "Mode %s detected, but isn't available." mode)
+          (mormal-mode)))
+    (message "`language-detection' package is not installed.")
+    (normal-mode)))
 
 (defun edit-indirect-display-active-buffer ()
   "Display the active edit-indirect buffer of the region the point is in."
