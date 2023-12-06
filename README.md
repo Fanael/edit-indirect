@@ -3,7 +3,7 @@
 
 # edit-indirect
 
-Edit regions in separate buffers, like `org-edit-src-code' but for arbitrary regions.
+Edit regions in separate buffers, like `org-edit-src-code` but for arbitrary regions.
 
 ## Installation
 
@@ -18,9 +18,16 @@ If you don't, open `edit-indirect.el` in Emacs and call
 
 ## Usage
 
-To start editing run:
+To start editing, run:
 
     M-x edit-indirect-region
+
+### Indirect buffer shortcuts
+
+- `C-c '` or `C-c C-c` to commit the changes
+
+- `C-c C-k` to abort
+
 
 ## Customization
 
