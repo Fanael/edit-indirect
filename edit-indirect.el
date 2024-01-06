@@ -212,7 +212,7 @@ Can be called only when the current buffer is an edit-indirect
 buffer."
   (interactive)
   (edit-indirect--barf-if-not-indirect)
-  (edit-indirect--abort))
+  (edit-indirect--abort t))
 
 (defun edit-indirect-buffer-indirect-p (&optional buffer)
   "Non-nil iff the BUFFER is an edit-indirect buffer.
@@ -396,20 +396,18 @@ called with updated positions."
     (when beg-marker (set-marker beg-marker nil))
     (when end-marker (set-marker end-marker nil))))
 
-(defun edit-indirect--abort ()
-  "Abort indirect edit."
-  (edit-indirect--clean-up))
-
-(defun edit-indirect--clean-up ()
-  "Clean up an edit-indirect buffer."
+(defun edit-indirect--abort (kill)
+  "Abort an indirect edit and clean up the edit-indirect buffer."
   (delete-overlay edit-indirect--overlay)
   ;; Kill the overlay reference so that `edit-indirect--abort-on-kill-buffer'
   ;; won't try to call us again.
   (setq edit-indirect--overlay nil)
   ;; If we created a window, get rid of it. Kill the buffer we created.
-  (if edit-indirect--should-quit-window
-      (quit-window t)
-    (kill-buffer)))
+  (if (and edit-indirect--should-quit-window
+           (eq (window-buffer (selected-window))
+               (current-buffer)))
+      (quit-window kill)
+    (and kill (kill-buffer))))
 
 (defun edit-indirect--rebind-save-hooks ()
   "Bind our `save-buffer' hooks in the current buffer.
@@ -428,7 +426,7 @@ Should only be called from `write-contents-functions'."
   "Abort indirect edit.
 Should be called only from `kill-buffer-hook'."
   (when edit-indirect--overlay
-    (edit-indirect--abort)))
+    (edit-indirect--abort nil)))
 
 (defun edit-indirect--barf-if-not-indirect ()
   "Signal an error if the current buffer is not an edit-indirect buffer.
