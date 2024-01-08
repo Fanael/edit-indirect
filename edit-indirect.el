@@ -2,14 +2,14 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.10
+;; Version: 0.1.11
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
 ;; SPDX-License-Identifier: BSD-2-clause
 ;;
-;; Copyright (c) 2014-2022, Fanael Linithien
+;; Copyright (c) 2014-2024, Fanael Linithien
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -192,7 +192,7 @@ buffer."
   (interactive)
   (edit-indirect--barf-if-not-indirect)
   (edit-indirect--commit)
-  (edit-indirect--clean-up))
+  (edit-indirect--abort t))
 
 (defun edit-indirect-save ()
   "Save the modifications done in an edit-indirect buffer.
