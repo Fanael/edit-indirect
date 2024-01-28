@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.12
+;; Version: 0.1.13
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -381,20 +381,16 @@ No error is signaled if `inhibit-read-only' or
     (set-buffer-modified-p nil)))
 
 (defun edit-indirect--run-hook-with-positions (hook beg end)
-  "Run HOOK with the specified positions BEG and END.
+  "Run HOOK with the specified markers BEG and END.
 HOOK should be a symbol, a hook variable.
-The functions are passed integer positions.
+The functions are passed integer positions instead of markers.
 If a function changes the buffer contents, the next function will be
 called with updated positions."
-  (let ((beg-marker (unless (markerp beg) (copy-marker beg)))
-        (end-marker (unless (markerp end) (copy-marker end))))
-    (run-hook-wrapped hook
-                      (lambda (f beg end)
-                        (funcall f (marker-position beg) (marker-position end))
-                        nil)
-                      (or beg-marker beg) (or end-marker end))
-    (when beg-marker (set-marker beg-marker nil))
-    (when end-marker (set-marker end-marker nil))))
+  (run-hook-wrapped hook
+                    (lambda (f beg end)
+                      (funcall f (marker-position beg) (marker-position end))
+                      nil)
+                    beg end))
 
 (defun edit-indirect--abort (kill)
   "Abort an indirect edit and clean up the edit-indirect buffer."
