@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Version: 0.1.11
+;; Version: 0.1.12
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -375,7 +375,7 @@ No error is signaled if `inhibit-read-only' or
               (unless (string= new-data (match-string 0))
                 (replace-match new-data t t))))
           (edit-indirect--run-hook-with-positions
-           'edit-indirect-after-commit-functions beg-marker (point))
+           'edit-indirect-after-commit-functions beg-marker end-marker)
           (set-marker beg-marker nil)
           (set-marker end-marker nil))))
     (set-buffer-modified-p nil)))
